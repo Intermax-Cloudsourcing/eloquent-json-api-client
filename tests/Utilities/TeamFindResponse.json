@@ -1,0 +1,12 @@
+{
+  "data": {
+    "id": "1",
+    "type": "teams",
+    "attributes": {
+      "externalId" : "123",
+      "name" :  "Development",
+      "createdAt" : "2023-03-16T10:14:33.745476Z",
+      "updatedAt" :  "2023-03-16T10:14:33.745476Z"
+    }
+  }
+}
