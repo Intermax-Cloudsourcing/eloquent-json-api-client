@@ -20,7 +20,14 @@ class QueryBuilder
     protected string $includes = '';
 
     protected array $operators = [
-        '=' => 'eq'
+        '=' => 'eq',
+        '<>' => 'nq',
+        '!=' => 'nq',
+        '>' => 'gt',
+        '>=' => 'gte',
+        '<' => 'lt',
+        '<=' => 'lte',
+        'like' => 'contains',
     ];
 
     public function __construct(protected Model $model)
@@ -33,6 +40,10 @@ class QueryBuilder
         if (is_null($value)) {
             $value = $operator;
             $operator = '=';
+        }
+
+        if (strtolower($operator) === 'like') {
+            $value = str_replace('%', '', $value);
         }
 
         $this->filters[$property][$this->operators[$operator]] = $value;

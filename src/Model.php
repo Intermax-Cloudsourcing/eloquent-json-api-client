@@ -16,14 +16,6 @@ use ReflectionProperty;
 
 abstract class Model
 {
-    /**
-     * @var array<int, string>
-     */
-    protected array $dates = [
-        'createdAt',
-        'updatedAt',
-    ];
-
     public function uri(): string
     {
         return Str::of((new ReflectionClass($this))->getShortName())
