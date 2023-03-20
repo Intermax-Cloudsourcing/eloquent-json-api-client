@@ -7,6 +7,7 @@ namespace Intermax\EloquentJsonApiClient;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 class QueryBuilder
 {
@@ -15,7 +16,7 @@ class QueryBuilder
      */
     protected array $filters = [];
 
-    protected array $sorts = [];
+    protected string $sorts = '';
 
     protected string $includes = '';
 
@@ -85,6 +86,25 @@ class QueryBuilder
         return $this;
     }
 
+    public function orderBy(string $property, string $direction = 'asc'): static
+    {
+        if (! in_array($direction, ['asc', 'desc'])) {
+            throw new InvalidArgumentException('Sort direction can only be asc or desc.');
+        }
+
+        $prefixes = [
+            'asc' => '',
+            'desc' => '-',
+        ];
+
+        $this->sorts = Str::of($this->sorts)
+            ->append(','.$prefixes[$direction].$property)
+            ->ltrim(',')
+            ->toString();
+
+        return $this;
+    }
+
     public function toQuery($id = null): string
     {
         $uri = $this->model->uri();
@@ -96,6 +116,7 @@ class QueryBuilder
         return Str::of($uri.'?'.http_build_query(array_filter([
             'filter' => $this->filters,
             'include' => $this->includes,
+            'sort' => $this->sorts,
         ])))->rtrim('?')->toString();
     }
 }
