@@ -16,6 +16,8 @@ use ReflectionProperty;
 
 abstract class Model
 {
+    protected int $perPage = 30;
+
     public function uri(): string
     {
         return Str::of((new ReflectionClass($this))->getShortName())
@@ -23,6 +25,11 @@ abstract class Model
             ->plural()
             ->prepend('/')
             ->toString();
+    }
+
+    public function perPage(): int
+    {
+        return $this->perPage;
     }
 
     abstract public function baseUrl(): string;

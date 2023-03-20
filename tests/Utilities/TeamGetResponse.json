@@ -1,0 +1,39 @@
+{
+  "data": [{
+    "id": "1",
+    "type": "teams",
+    "attributes": {
+      "externalId" : "1",
+      "name" :  "Development",
+      "createdAt" : "2023-03-16T10:14:33.745476Z",
+      "updatedAt" :  "2023-03-16T10:14:33.745476Z"
+    }
+  },{
+    "id": "2",
+    "type": "teams",
+    "attributes": {
+      "externalId" : "2",
+      "name" :  "Marketing",
+      "createdAt" : "2023-03-16T10:14:33.745476Z",
+      "updatedAt" :  "2023-03-16T10:14:33.745476Z"
+    }
+  },{
+    "id": "3",
+    "type": "teams",
+    "attributes": {
+      "externalId" : "3",
+      "name" :  "Human Resources",
+      "createdAt" : "2023-03-16T10:14:33.745476Z",
+      "updatedAt" :  "2023-03-16T10:14:33.745476Z"
+    }
+  },{
+    "id": "4",
+    "type": "teams",
+    "attributes": {
+      "externalId" : "4",
+      "name" :  "Finance",
+      "createdAt" : "2023-03-16T10:14:33.745476Z",
+      "updatedAt" :  "2023-03-16T10:14:33.745476Z"
+    }
+  }]
+}
