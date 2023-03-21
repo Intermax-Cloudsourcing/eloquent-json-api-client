@@ -1,0 +1,39 @@
+{
+    "name": "intermax/eloquent-json-api-client",
+    "description": "Eloquent type json api client.",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Patrick Hoogkamer",
+            "email": "patrickhoogkamer@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^9.0 || ^10.0",
+        "guzzlehttp/guzzle": "^7.5"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.6",
+        "nunomaduro/larastan": "^2.5",
+        "pestphp/pest": "^2.0",
+        "orchestra/testbench": "^7.0 || ^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Intermax\\EloquentJsonApiClient\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Intermax\\EloquentJsonApiClient\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}

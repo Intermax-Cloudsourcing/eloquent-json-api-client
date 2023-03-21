@@ -1,0 +1,39 @@
+{
+  "data": {
+    "id": "1",
+    "type": "teams",
+    "attributes": {
+      "externalId" : "123",
+      "name" :  "Development",
+      "createdAt" : "2023-03-16T10:14:33.745476Z",
+      "updatedAt" :  "2023-03-16T10:14:33.745476Z"
+    },
+    "relationships": {
+      "members": {
+        "data": [
+          { "type": "users", "id": "5" },
+          { "type": "users", "id": "12" }
+        ]
+      }
+    }
+  },
+  "included": [{
+    "type": "users",
+    "id": "5",
+    "attributes": {
+      "givenName": "Janae",
+      "familyName": "Ondricka",
+      "createdAt": "2013-02-03T03:09:15.000000Z",
+      "updatedAt": "2013-02-03T03:09:15.000000Z"
+    }
+  }, {
+    "type": "users",
+    "id": "12",
+    "attributes": {
+      "givenName": "Cristal",
+      "familyName": "Waters",
+      "createdAt": "1971-12-24T23:16:20.000000Z",
+      "updatedAt": "1971-12-24T23:16:20.000000Z"
+    }
+  }]
+}
