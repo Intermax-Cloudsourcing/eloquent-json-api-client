@@ -5,18 +5,42 @@ declare(strict_types=1);
 namespace Intermax\EloquentJsonApiClient;
 
 use Carbon\Carbon;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Intermax\EloquentJsonApiClient\Attributes\DateTime;
 use Intermax\EloquentJsonApiClient\Attributes\Property;
+use Intermax\EloquentJsonApiClient\Attributes\ReadOnlyProperty;
 use Intermax\EloquentJsonApiClient\Attributes\Relationship;
+use Intermax\EloquentJsonApiClient\Attributes\WriteOnlyProperty;
 use ReflectionClass;
 use ReflectionProperty;
 
 abstract class Model
 {
     protected int $perPage = 30;
+
+    public bool $exists = false;
+
+    /**
+     * @var array<string, string>
+     */
+    private array $requestWithoutBodyHeaders = [
+        'Accept' => 'application/vnd.api+json',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    private array $requestWithBodyHeaders = [
+        'Accept' => 'application/vnd.api+json',
+        'Content-Type' => 'application/vnd.api+json',
+    ];
+
+    #[Property]
+    public string $id;
 
     final public function __construct()
     {
@@ -28,6 +52,14 @@ abstract class Model
             ->lower()
             ->plural()
             ->prepend('/')
+            ->toString();
+    }
+
+    public function type(): string
+    {
+        return Str::of((new ReflectionClass($this))->getShortName())
+            ->plural()
+            ->camel()
             ->toString();
     }
 
@@ -65,7 +97,7 @@ abstract class Model
      * @param  array<string, mixed>  $item
      * @param  array<int, mixed>|null  $included
      */
-    public function hydrate(array $item, array|null $included = null): static
+    public function hydrate(array $item, array|null $included = null, bool $createNewInstance = true): static
     {
         if (is_null($included)) {
             $included = [];
@@ -73,7 +105,11 @@ abstract class Model
 
         $included = Arr::keyBy($included, fn ($includedItem) => $includedItem['id'].'-'.$includedItem['type']);
 
-        $model = new static();
+        if ($createNewInstance) {
+            $model = new static();
+        } else {
+            $model = $this;
+        }
 
         $reflectionClass = new ReflectionClass($model);
 
@@ -140,8 +176,76 @@ abstract class Model
 
     public function save(): bool
     {
+        $pendingRequest = Http::withHeaders(array_merge($this->requestWithBodyHeaders, $this->headers()))->throw();
+
+        $body = [
+            'type' => $this->type(),
+            'attributes' => $this->propertiesToArray(withReadOnly: false),
+        ];
+
+        if ($this->exists && isset($this->id)) {
+            $response = $pendingRequest->patch($this->baseUrl().$this->uri().'/'.$this->id, [
+                'id' => $this->id,
+                ...$body,
+            ]);
+        } else {
+            $response = $pendingRequest->post($this->baseUrl().$this->uri(), $body);
+        }
+
+        $this->hydrate(
+            item: $response->json('data'),
+            createNewInstance: false
+        );
+
+        $this->exists = true;
+
         return true;
     }
+
+    public function delete(): bool
+    {
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function propertiesToArray(bool $withId = false, bool $withReadOnly = true, bool $withWriteOnly = true): array
+    {
+        $all = $this->filterProperties(new ReflectionClass($this), Property::class);
+
+        $filtered = array_filter($all, function (ReflectionProperty $property) use ($withId, $withReadOnly, $withWriteOnly) {
+            if (
+                (! $withId && $property->name == 'id')
+                || (! $withReadOnly && count($property->getAttributes(ReadOnlyProperty::class)))
+                || (! $withWriteOnly && count($property->getAttributes(WriteOnlyProperty::class)))
+            ) {
+                return false;
+            }
+
+            return true;
+        });
+
+        $properties = [];
+
+        /** @var ReflectionProperty $reflectionProperty */
+        foreach ($filtered as $reflectionProperty) {
+            $name = $reflectionProperty->name;
+
+            $properties[$name] = $this->$name;
+        }
+
+        return $properties;
+    }
+
+//    protected function pendingRequestWithContent(): PendingRequest
+//    {
+//        return Http
+//    }
+//
+//    protected function pendingRequestWithoutContent(): PendingRequest
+//    {
+//        return Http::
+//    }
 
     /**
      * @param  ReflectionClass<Model>  $reflectionClass
@@ -153,13 +257,15 @@ abstract class Model
         return array_values(array_filter(
             $reflectionClass->getProperties(),
             function (ReflectionProperty $value) use ($attributes) {
-                $hasAttributes = true;
-
                 foreach ($attributes as $attribute) {
                     $hasAttributes = (bool) count($value->getAttributes($attribute));
+
+                    if (! $hasAttributes) {
+                        return false;
+                    }
                 }
 
-                return $hasAttributes;
+                return true;
             }
         ));
     }
