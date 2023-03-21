@@ -78,7 +78,7 @@ class QueryBuilder
 
     public function find(mixed $id): Model|null
     {
-        $response = Http::get($this->model->baseUrl().$this->toQuery($id))->throwUnlessStatus(404);
+        $response = Http::withHeaders($this->model->headers())->get($this->model->baseUrl().$this->toQuery($id))->throwUnlessStatus(404);
 
         if ($response->failed()) {
             return null;
@@ -183,7 +183,7 @@ class QueryBuilder
 
     public function performCollectionQuery(): Response
     {
-        return Http::get($this->model->baseUrl().$this->toQuery());
+        return Http::withHeaders($this->model->headers())->get($this->model->baseUrl().$this->toQuery());
     }
 
     /**

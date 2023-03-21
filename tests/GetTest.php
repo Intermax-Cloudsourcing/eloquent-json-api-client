@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Intermax\EloquentJsonApiClient\Tests\Team;
@@ -11,8 +12,7 @@ use Orchestra\Testbench\TestCase;
 uses(TestCase::class);
 
 it('fetches teams', function () {
-    Http::fake(fn () => Http::response(file_get_contents(__DIR__.'/Utilities/TeamGetResponse.json'))
-    );
+    Http::fake(fn () => Http::response(file_get_contents(__DIR__.'/Utilities/TeamGetResponse.json')));
 
     $teams = Team::query()->get();
 
@@ -21,4 +21,14 @@ it('fetches teams', function () {
     expect($teams)->toBeInstanceOf(Collection::class)
         ->and($teams->count())->toBe(4)
         ->and($teams->first())->toBeInstanceOf(Team::class);
+});
+
+it('sends headers with the request', function () {
+    Http::fake(fn () => Http::response(file_get_contents(__DIR__.'/Utilities/TeamGetResponse.json')));
+
+    Team::query()->get();
+
+    Http::assertSent(
+        fn (Request $request) => Arr::first($request->header('api-key')) === 'test'
+    );
 });
