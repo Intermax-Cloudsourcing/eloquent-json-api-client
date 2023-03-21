@@ -38,4 +38,9 @@ class Team extends Model
     {
         return 'https://localhost';
     }
+
+    public function headers(): array
+    {
+        return ['api-key' => 'test'];
+    }
 }
