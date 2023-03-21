@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
@@ -9,8 +11,7 @@ use Orchestra\Testbench\TestCase;
 uses(TestCase::class);
 
 it('fetches teams', function () {
-    Http::fake(fn () =>
-        Http::response(file_get_contents(__DIR__.'/Utilities/TeamGetResponse.json'))
+    Http::fake(fn () => Http::response(file_get_contents(__DIR__.'/Utilities/TeamGetResponse.json'))
     );
 
     $teams = Team::query()->get();

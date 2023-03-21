@@ -27,10 +27,13 @@ class QueryBuilder
     protected string $includes = '';
 
     /**
-     * @var array<string, string>
+     * @var array<string, mixed>
      */
     protected array $page = [];
 
+    /**
+     * @var array<string, string>
+     */
     protected array $operators = [
         '=' => 'eq',
         '<>' => 'nq',
@@ -44,7 +47,6 @@ class QueryBuilder
 
     public function __construct(protected Model $model)
     {
-
     }
 
     public function where(string $property, mixed $operator, mixed $value = null): static
@@ -64,8 +66,7 @@ class QueryBuilder
     }
 
     /**
-     * @param string $property
-     * @param array<int, mixed> $values
+     * @param  array<int, mixed>  $values
      * @return $this
      */
     public function whereIn(string $property, array $values): static
@@ -75,14 +76,22 @@ class QueryBuilder
         return $this;
     }
 
-    public function find(mixed $id): Model
+    public function find(mixed $id): Model|null
     {
-        $response = Http::get($this->model->baseUrl().$this->toQuery($id));
+        $response = Http::get($this->model->baseUrl().$this->toQuery($id))->throwUnlessStatus(404);
+
+        if ($response->failed()) {
+            return null;
+        }
 
         return $this->model->hydrate($response->json('data'), $response->json('included'));
     }
 
-    public function with(...$relations): static
+    /**
+     * @param  array<int, string>  ...$relations
+     * @return $this
+     */
+    public function with(array ...$relations): static
     {
         $first = Arr::first($relations);
         if (is_array($first)) {
@@ -126,6 +135,13 @@ class QueryBuilder
         return $this->hydrateCollection($response);
     }
 
+    /**
+     * @param  int|null  $perPage
+     * @param  int|null  $page
+     * @return LengthAwarePaginatorContract<Model>
+     *
+     * @throws Exception
+     */
     public function paginate(int|null $perPage = null, string $pageName = 'page', int|null $page = null): LengthAwarePaginatorContract
     {
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
@@ -149,7 +165,7 @@ class QueryBuilder
         );
     }
 
-    public function toQuery($id = null): string
+    public function toQuery(string|int|null $id = null): string
     {
         $uri = $this->model->uri();
 
@@ -167,19 +183,18 @@ class QueryBuilder
 
     public function performCollectionQuery(): Response
     {
-        return Http::get($this->model->baseUrl() . $this->toQuery());
+        return Http::get($this->model->baseUrl().$this->toQuery());
     }
 
     /**
-     * @param Response $response
-     * @return Collection
+     * @return Collection<int, Model>
      */
     public function hydrateCollection(Response $response): Collection
     {
         return (new Collection(
             $response->json('data')
         ))->map(
-            fn($item) => $this->model->hydrate($item, $response->json('included'))
+            fn ($item) => $this->model->hydrate($item, $response->json('included'))
         );
     }
 }

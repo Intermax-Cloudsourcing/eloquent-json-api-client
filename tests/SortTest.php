@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Intermax\EloquentJsonApiClient\Tests\Team;
 
 it('applies a sort parameter to the query', function () {
@@ -11,4 +13,3 @@ it('applies a sort parameter to the query', function () {
         ->toContain('/teams?')
         ->toContain('sort='.urlencode('name,-id'));
 });
-

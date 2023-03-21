@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Intermax\EloquentJsonApiClient\Tests\Car;
 
 it('produces a json api query with a filter', function () {

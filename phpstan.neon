@@ -1,0 +1,16 @@
+includes:
+  - %currentWorkingDirectory%/vendor/nunomaduro/larastan/extension.neon
+
+parameters:
+
+  paths:
+    - %currentWorkingDirectory%/src
+
+  level: 8
+
+  checkMissingIterableValueType: true
+  ignoreErrors:
+    -
+      message: "#^Method Intermax\\\\EloquentJsonApiClient\\\\Model\\:\\:find\\(\\) should return static\\(Intermax\\\\EloquentJsonApiClient\\\\Model\\)\\|null but returns Intermax\\\\EloquentJsonApiClient\\\\Model\\|null\\.$#"
+      count: 1
+      path: src/Model.php

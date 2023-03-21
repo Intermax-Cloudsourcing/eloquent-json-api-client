@@ -18,6 +18,10 @@ abstract class Model
 {
     protected int $perPage = 30;
 
+    final public function __construct()
+    {
+    }
+
     public function uri(): string
     {
         return Str::of((new ReflectionClass($this))->getShortName())
@@ -58,9 +62,8 @@ abstract class Model
     }
 
     /**
-     * @param array<string, mixed> $item
-     * @param array<int, mixed>|null $included
-     * @return static
+     * @param  array<string, mixed>  $item
+     * @param  array<int, mixed>|null  $included
      */
     public function hydrate(array $item, array|null $included = null): static
     {
@@ -141,8 +144,8 @@ abstract class Model
     }
 
     /**
-     * @param ReflectionClass $reflectionClass
-     * @param class-string ...$attributes
+     * @param  ReflectionClass<Model>  $reflectionClass
+     * @param  class-string  ...$attributes
      * @return array<int, ReflectionProperty>
      */
     private function filterProperties(ReflectionClass $reflectionClass, string ...$attributes): array

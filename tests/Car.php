@@ -8,7 +8,6 @@ use Intermax\EloquentJsonApiClient\Model;
 
 class Car extends Model
 {
-
     public function baseUrl(): string
     {
         // TODO: Implement baseUrl() method.
