@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace Intermax\EloquentJsonApiClient;
 
+use Closure;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator as LengthAwarePaginatorContract;
+use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
-class QueryBuilder
+class QueryBuilder extends Builder
 {
     /**
      * @var array<string, mixed>
@@ -34,7 +37,7 @@ class QueryBuilder
     /**
      * @var array<string, string>
      */
-    protected array $operators = [
+    protected array $apiOperators = [
         '=' => 'eq',
         '<>' => 'nq',
         '!=' => 'nq',
@@ -45,11 +48,108 @@ class QueryBuilder
         'like' => 'contains',
     ];
 
-    public function __construct(protected Model $model)
+    public function __construct(protected $model)
     {
+        parent::__construct(new \Illuminate\Database\Query\Builder(new class implements ConnectionInterface
+        {
+            public function table($table, $as = null)
+            {
+                // TODO: Implement table() method.
+            }
+
+            public function raw($value)
+            {
+                // TODO: Implement raw() method.
+            }
+
+            public function selectOne($query, $bindings = [], $useReadPdo = true)
+            {
+                // TODO: Implement selectOne() method.
+            }
+
+            public function select($query, $bindings = [], $useReadPdo = true)
+            {
+                // TODO: Implement select() method.
+            }
+
+            public function cursor($query, $bindings = [], $useReadPdo = true)
+            {
+                // TODO: Implement cursor() method.
+            }
+
+            public function insert($query, $bindings = [])
+            {
+                // TODO: Implement insert() method.
+            }
+
+            public function update($query, $bindings = [])
+            {
+                // TODO: Implement update() method.
+            }
+
+            public function delete($query, $bindings = [])
+            {
+                // TODO: Implement delete() method.
+            }
+
+            public function statement($query, $bindings = [])
+            {
+                // TODO: Implement statement() method.
+            }
+
+            public function affectingStatement($query, $bindings = [])
+            {
+                // TODO: Implement affectingStatement() method.
+            }
+
+            public function unprepared($query)
+            {
+                // TODO: Implement unprepared() method.
+            }
+
+            public function prepareBindings(array $bindings)
+            {
+                // TODO: Implement prepareBindings() method.
+            }
+
+            public function transaction(Closure $callback, $attempts = 1)
+            {
+                // TODO: Implement transaction() method.
+            }
+
+            public function beginTransaction()
+            {
+                // TODO: Implement beginTransaction() method.
+            }
+
+            public function commit()
+            {
+                // TODO: Implement commit() method.
+            }
+
+            public function rollBack()
+            {
+                // TODO: Implement rollBack() method.
+            }
+
+            public function transactionLevel()
+            {
+                // TODO: Implement transactionLevel() method.
+            }
+
+            public function pretend(Closure $callback)
+            {
+                // TODO: Implement pretend() method.
+            }
+
+            public function getDatabaseName()
+            {
+                // TODO: Implement getDatabaseName() method.
+            }
+        }));
     }
 
-    public function where(string $property, mixed $operator, mixed $value = null): static
+    public function where($column, $operator = null, $value = null, $boolean = 'and'): static
     {
         if (is_null($value)) {
             $value = $operator;
@@ -60,7 +160,7 @@ class QueryBuilder
             $value = str_replace('%', '', $value);
         }
 
-        $this->filters[$property][$this->operators[$operator]] = $value;
+        $this->filters[$column][$this->apiOperators[$operator]] = $value;
 
         return $this;
     }
@@ -69,14 +169,17 @@ class QueryBuilder
      * @param  array<int, mixed>  $values
      * @return $this
      */
-    public function whereIn(string $property, array $values): static
+    public function whereIn($column, $values, $boolean = 'and', $not = false): static
     {
-        $this->filters[$property][$this->operators['=']] = implode(',', $values);
+        $this->filters[$column][$this->apiOperators['=']] = implode(',', $values);
 
         return $this;
     }
 
-    public function find(mixed $id): Model|null
+    /**
+     * @throws RequestException
+     */
+    public function find($id, $columns = ['*']): Model|null
     {
         $response = Http::withHeaders($this->model->headers())->get($this->model->baseUrl().$this->toQuery($id))->throwUnlessStatus(404);
 
@@ -88,15 +191,17 @@ class QueryBuilder
     }
 
     /**
-     * @param  array<int, string>  ...$relations
      * @return $this
+     *
+     * @throws NotImplementedException
      */
-    public function with(array ...$relations): static
+    public function with($relations, $callback = null): static
     {
-        $first = Arr::first($relations);
-        if (is_array($first)) {
-            $relations = $first;
+        if ($callback instanceof Closure) {
+            throw new NotImplementedException('with() callback not implemented.');
         }
+
+        $relations = is_string($relations) ? func_get_args() : $relations;
 
         $this->includes = Str::of($this->includes)
             ->append(','.implode(',', $relations))
@@ -106,7 +211,7 @@ class QueryBuilder
         return $this;
     }
 
-    public function orderBy(string $property, string $direction = 'asc'): static
+    public function orderBy($column, $direction = 'asc'): static
     {
         if (! in_array($direction, ['asc', 'desc'])) {
             throw new InvalidArgumentException('Sort direction can only be asc or desc.');
@@ -118,7 +223,7 @@ class QueryBuilder
         ];
 
         $this->sorts = Str::of($this->sorts)
-            ->append(','.$prefixes[$direction].$property)
+            ->append(','.$prefixes[$direction].$column)
             ->ltrim(',')
             ->toString();
 
@@ -128,7 +233,7 @@ class QueryBuilder
     /**
      * @return Collection<int, Model>
      */
-    public function get(): Collection
+    public function get($columns = ['*']): Collection
     {
         $response = $this->performCollectionQuery();
 
@@ -136,13 +241,9 @@ class QueryBuilder
     }
 
     /**
-     * @param  int|null  $perPage
-     * @param  int|null  $page
-     * @return LengthAwarePaginatorContract<Model>
-     *
      * @throws Exception
      */
-    public function paginate(int|null $perPage = null, string $pageName = 'page', int|null $page = null): LengthAwarePaginatorContract
+    public function paginate($perPage = null, $columns = ['*'], $pageName = 'page', $page = null): LengthAwarePaginatorContract
     {
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
 
